@@ -1,6 +1,6 @@
-# PoE Go Non-Click Protection
+# PoE Go Miss-Click Protection
 
-Приложение на языке Go для защиты от случайных кликов при крафте в игре Path of Exile.
+Приложение на языке Go для защиты от лишних кликов при крафте в игре Path of Exile.
 
 ## Описание
 

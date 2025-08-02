@@ -174,9 +174,12 @@ func (a *FyneApp) selectPixel() {
 				// Get current pixel color
 				a.updateCurrentColor()
 				
-				a.setTargetBtn.Enable()
-				a.coordsLabel.SetText(fmt.Sprintf("Координаты: (%d, %d)", x, y))
-				a.statusLabel.SetText(fmt.Sprintf("Выбран пиксель: (%d, %d)", x, y))
+				// Use fyne.QueueMain to update GUI elements safely
+				fyne.QueueMain(func() {
+					a.setTargetBtn.Enable()
+					a.coordsLabel.SetText(fmt.Sprintf("Координаты: (%d, %d)", x, y))
+					a.statusLabel.SetText(fmt.Sprintf("Выбран пиксель: (%d, %d)", x, y))
+				})
 				
 				// Wait for key release
 				for {
@@ -211,12 +214,16 @@ func (a *FyneApp) updateCurrentColor() {
 
 func (a *FyneApp) updateCurrentColorDisplay() {
 	colorText := fmt.Sprintf("RGB(%d,%d,%d)", a.currentColor.R, a.currentColor.G, a.currentColor.B)
-	a.currentColorRect.SetContent(widget.NewLabel(colorText))
+	fyne.QueueMain(func() {
+		a.currentColorRect.SetContent(widget.NewLabel(colorText))
+	})
 }
 
 func (a *FyneApp) updateTargetColorDisplay() {
 	colorText := fmt.Sprintf("RGB(%d,%d,%d)", a.targetColor.R, a.targetColor.G, a.targetColor.B)
-	a.targetColorRect.SetContent(widget.NewLabel(colorText))
+	fyne.QueueMain(func() {
+		a.targetColorRect.SetContent(widget.NewLabel(colorText))
+	})
 }
 
 func (a *FyneApp) monitoringLoop() {
@@ -262,8 +269,11 @@ func (a *FyneApp) updateStatsLoop() {
 		
 		avgChecks := float64(count) / elapsed
 		
-		a.checkCountLabel.SetText(fmt.Sprintf("Количество проверок: %d", count))
-		a.avgChecksLabel.SetText(fmt.Sprintf("Проверок в секунду: %.1f", avgChecks))
+		// Use fyne.QueueMain to update GUI elements safely
+		fyne.QueueMain(func() {
+			a.checkCountLabel.SetText(fmt.Sprintf("Количество проверок: %d", count))
+			a.avgChecksLabel.SetText(fmt.Sprintf("Проверок в секунду: %.1f", avgChecks))
+		})
 		
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -293,9 +303,11 @@ func (a *FyneApp) triggerAction() {
 	currentX, currentY := getCursorPos()
 	setCursorPos(currentX, currentY-300)
 	
-	// Stop monitoring
-	a.stopMonitoring()
-	a.statusLabel.SetText("СРАБОТКА! Мышь перемещена, мониторинг остановлен")
+	// Stop monitoring and update GUI in main thread
+	fyne.QueueMain(func() {
+		a.stopMonitoring()
+		a.statusLabel.SetText("СРАБОТКА! Мышь перемещена, мониторинг остановлен")
+	})
 }
 
 func (a *FyneApp) listenForHotkeys() {
@@ -310,10 +322,15 @@ func (a *FyneApp) listenForHotkeys() {
 			isMonitoring := a.isMonitoring
 			a.mu.RUnlock()
 			
+			// Use fyne.QueueMain to execute GUI updates in the main thread
 			if isMonitoring {
-				a.stopMonitoring()
+				fyne.QueueMain(func() {
+					a.stopMonitoring()
+				})
 			} else {
-				a.startMonitoring()
+				fyne.QueueMain(func() {
+					a.startMonitoring()
+				})
 			}
 			
 			// Wait for key release to avoid multiple triggers

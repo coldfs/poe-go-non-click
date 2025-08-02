@@ -5,7 +5,14 @@
       "Bash(go:*)",
       "Bash(set CGO_ENABLED=1)",
       "Bash(./poe-go-non-click.exe)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(rm:*)",
+      "Bash(gcc:*)",
+      "Bash(where gcc)",
+      "Bash(wails:*)",
+      "Bash(export:*)",
+      "Bash(grep:*)",
+      "Bash(timeout 30 go build -v -o poe-go-non-click-fyne.exe main_fyne.go)"
     ],
     "deny": []
   }

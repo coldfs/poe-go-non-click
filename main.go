@@ -176,8 +176,8 @@ func (a *FyneApp) selectPixel() {
 				// Get current pixel color
 				a.updateCurrentColor()
 				
-				// Update GUI elements safely using app.DoSync
-				a.app.DoSync(func() {
+				// Update GUI elements safely using fyne.Do
+				fyne.Do(func() {
 					a.setTargetBtn.Enable()
 					a.coordsLabel.SetText(fmt.Sprintf("Координаты: (%d, %d)", x, y))
 					a.statusLabel.SetText(fmt.Sprintf("Выбран пиксель: (%d, %d)", x, y))
@@ -216,14 +216,14 @@ func (a *FyneApp) updateCurrentColor() {
 
 func (a *FyneApp) updateCurrentColorDisplay() {
 	colorText := fmt.Sprintf("RGB(%d,%d,%d)", a.currentColor.R, a.currentColor.G, a.currentColor.B)
-	a.app.DoSync(func() {
+	fyne.Do(func() {
 		a.currentColorRect.SetContent(widget.NewLabel(colorText))
 	})
 }
 
 func (a *FyneApp) updateTargetColorDisplay() {
 	colorText := fmt.Sprintf("RGB(%d,%d,%d)", a.targetColor.R, a.targetColor.G, a.targetColor.B)
-	a.app.DoSync(func() {
+	fyne.Do(func() {
 		a.targetColorRect.SetContent(widget.NewLabel(colorText))
 	})
 }
@@ -271,8 +271,8 @@ func (a *FyneApp) updateStatsLoop() {
 		
 		avgChecks := float64(count) / elapsed
 		
-		// Update GUI elements safely using app.DoSync
-		a.app.DoSync(func() {
+		// Update GUI elements safely using fyne.Do
+		fyne.Do(func() {
 			a.checkCountLabel.SetText(fmt.Sprintf("Количество проверок: %d", count))
 			a.avgChecksLabel.SetText(fmt.Sprintf("Проверок в секунду: %.1f", avgChecks))
 		})
@@ -305,8 +305,8 @@ func (a *FyneApp) triggerAction() {
 	currentX, currentY := getCursorPos()
 	setCursorPos(currentX, currentY-300)
 	
-	// Stop monitoring and update GUI using app.DoSync
-	a.app.DoSync(func() {
+	// Stop monitoring and update GUI using fyne.Do
+	fyne.Do(func() {
 		a.stopMonitoring()
 		a.statusLabel.SetText("СРАБОТКА! Мышь перемещена, мониторинг остановлен")
 	})
@@ -324,13 +324,13 @@ func (a *FyneApp) listenForHotkeys() {
 			isMonitoring := a.isMonitoring
 			a.mu.RUnlock()
 			
-			// Execute GUI updates in the main thread using app.DoSync
+			// Execute GUI updates in the main thread using fyne.Do
 			if isMonitoring {
-				a.app.DoSync(func() {
+				fyne.Do(func() {
 					a.stopMonitoring()
 				})
 			} else {
-				a.app.DoSync(func() {
+				fyne.Do(func() {
 					a.startMonitoring()
 				})
 			}

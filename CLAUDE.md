@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Windows desktop application written in Go that prevents accidental clicks during crafting in Path of Exile. The application monitors a specific pixel on screen and automatically moves the mouse when the target color is detected.
+This is a Windows desktop application written in Go that prevents accidental clicks during crafting in Path of Exile. The application monitors a specific pixel on screen and automatically performs a right-click when the target color is detected.
 
 ## Build Commands
 
@@ -54,16 +54,15 @@ go mod download
 
 ### Core Dependencies
 - `fyne.io/fyne/v2` - GUI framework
-- `github.com/go-vgo/robotgo` - System automation (indirect via imports)
-- `github.com/kbinani/screenshot` - Screen capture capabilities
-- Windows API calls via syscall package
+- Windows API calls via syscall package (user32.dll, gdi32.dll)
+- Direct system integration for pixel monitoring and mouse control
 
 ### Application Flow
 1. User selects pixel coordinates and target color
-2. Monitoring loop checks pixel color every 10ms
+2. Monitoring loop checks pixel color every 5ms
 3. On color match (2 consecutive matches), triggers action:
    - Plays system beep
-   - Moves mouse 300 pixels up
+   - Performs right-click at current cursor position
    - Stops monitoring
 
 ### Thread Safety Notes
@@ -84,4 +83,9 @@ This application requires CGO enabled due to Windows API calls and Fyne's native
 ### Color Matching
 - RGB tolerance of ±5 per channel for flexibility
 - Requires 2 consecutive matches to prevent false positives
-- 10ms check interval for responsive detection
+- 5ms check interval for responsive detection
+
+### Mouse Control
+- Uses Windows API `mouse_event` for right-click simulation
+- Right-click provides safer interruption than mouse movement
+- Preserves cursor position while stopping current action

@@ -32,6 +32,7 @@ type POINT struct {
 }
 
 type FyneApp struct {
+	app               fyne.App
 	window            fyne.Window
 	isMonitoring      bool
 	selectedX         int
@@ -62,6 +63,7 @@ func main() {
 	a.SetIcon(nil)
 	
 	myApp := &FyneApp{
+		app:             a,
 		window:          a.NewWindow("PoE Go Non-Click Protection"),
 		requiredMatches: 2,
 	}
@@ -174,10 +176,12 @@ func (a *FyneApp) selectPixel() {
 				// Get current pixel color
 				a.updateCurrentColor()
 				
-				// Update GUI elements safely
-				a.setTargetBtn.Enable()
-				a.coordsLabel.SetText(fmt.Sprintf("Координаты: (%d, %d)", x, y))
-				a.statusLabel.SetText(fmt.Sprintf("Выбран пиксель: (%d, %d)", x, y))
+				// Update GUI elements safely using app.DoSync
+				a.app.DoSync(func() {
+					a.setTargetBtn.Enable()
+					a.coordsLabel.SetText(fmt.Sprintf("Координаты: (%d, %d)", x, y))
+					a.statusLabel.SetText(fmt.Sprintf("Выбран пиксель: (%d, %d)", x, y))
+				})
 				
 				// Wait for key release
 				for {
@@ -212,12 +216,16 @@ func (a *FyneApp) updateCurrentColor() {
 
 func (a *FyneApp) updateCurrentColorDisplay() {
 	colorText := fmt.Sprintf("RGB(%d,%d,%d)", a.currentColor.R, a.currentColor.G, a.currentColor.B)
-	a.currentColorRect.SetContent(widget.NewLabel(colorText))
+	a.app.DoSync(func() {
+		a.currentColorRect.SetContent(widget.NewLabel(colorText))
+	})
 }
 
 func (a *FyneApp) updateTargetColorDisplay() {
 	colorText := fmt.Sprintf("RGB(%d,%d,%d)", a.targetColor.R, a.targetColor.G, a.targetColor.B)
-	a.targetColorRect.SetContent(widget.NewLabel(colorText))
+	a.app.DoSync(func() {
+		a.targetColorRect.SetContent(widget.NewLabel(colorText))
+	})
 }
 
 func (a *FyneApp) monitoringLoop() {
@@ -263,9 +271,11 @@ func (a *FyneApp) updateStatsLoop() {
 		
 		avgChecks := float64(count) / elapsed
 		
-		// Update GUI elements safely
-		a.checkCountLabel.SetText(fmt.Sprintf("Количество проверок: %d", count))
-		a.avgChecksLabel.SetText(fmt.Sprintf("Проверок в секунду: %.1f", avgChecks))
+		// Update GUI elements safely using app.DoSync
+		a.app.DoSync(func() {
+			a.checkCountLabel.SetText(fmt.Sprintf("Количество проверок: %d", count))
+			a.avgChecksLabel.SetText(fmt.Sprintf("Проверок в секунду: %.1f", avgChecks))
+		})
 		
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -295,18 +305,11 @@ func (a *FyneApp) triggerAction() {
 	currentX, currentY := getCursorPos()
 	setCursorPos(currentX, currentY-300)
 	
-	// Stop monitoring and update GUI
-	a.mu.Lock()
-	a.isMonitoring = false
-	a.mu.Unlock()
-	
-	a.startBtn.Enable()
-	a.stopBtn.Disable()
-	a.selectPixelBtn.Enable()
-	if a.selectedX != 0 && a.selectedY != 0 {
-		a.setTargetBtn.Enable()
-	}
-	a.statusLabel.SetText("СРАБОТКА! Мышь перемещена, мониторинг остановлен")
+	// Stop monitoring and update GUI using app.DoSync
+	a.app.DoSync(func() {
+		a.stopMonitoring()
+		a.statusLabel.SetText("СРАБОТКА! Мышь перемещена, мониторинг остановлен")
+	})
 }
 
 func (a *FyneApp) listenForHotkeys() {
@@ -321,45 +324,15 @@ func (a *FyneApp) listenForHotkeys() {
 			isMonitoring := a.isMonitoring
 			a.mu.RUnlock()
 			
-			// Execute GUI updates in the main thread
+			// Execute GUI updates in the main thread using app.DoSync
 			if isMonitoring {
-				go func() {
-					a.mu.Lock()
-					a.isMonitoring = false
-					a.mu.Unlock()
-					
-					// Update GUI elements in main thread safe way
-					a.startBtn.Enable()
-					a.stopBtn.Disable()
-					a.selectPixelBtn.Enable()
-					if a.selectedX != 0 && a.selectedY != 0 {
-						a.setTargetBtn.Enable()
-					}
-					a.statusLabel.SetText("Мониторинг остановлен")
-				}()
+				a.app.DoSync(func() {
+					a.stopMonitoring()
+				})
 			} else {
-				go func() {
-					if a.selectedX == 0 && a.selectedY == 0 {
-						a.statusLabel.SetText("Ошибка: Не выбран пиксель для мониторинга")
-						return
-					}
-					
-					a.mu.Lock()
-					a.isMonitoring = true
-					a.checkCount = 0
-					a.startTime = time.Now()
-					a.matchCount = 0
-					a.mu.Unlock()
-					
-					a.startBtn.Disable()
-					a.stopBtn.Enable()
-					a.selectPixelBtn.Disable()
-					a.setTargetBtn.Disable()
-					a.statusLabel.SetText("Мониторинг активен")
-					
-					go a.monitoringLoop()
-					go a.updateStatsLoop()
-				}()
+				a.app.DoSync(func() {
+					a.startMonitoring()
+				})
 			}
 			
 			// Wait for key release to avoid multiple triggers

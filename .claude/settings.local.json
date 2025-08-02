@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(go mod init:*)"
+      "Bash(go mod init:*)",
+      "Bash(go:*)",
+      "Bash(set CGO_ENABLED=1)",
+      "Bash(./poe-go-non-click.exe)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }

@@ -26,11 +26,18 @@ var (
 	procGetAsyncKeyState = user32.NewProc("GetAsyncKeyState")
 	procMessageBeep      = user32.NewProc("MessageBeep")
 	procGetKeyState      = user32.NewProc("GetKeyState")
+	procMouseEvent       = user32.NewProc("mouse_event")
 )
 
 type POINT struct {
 	X, Y int32
 }
+
+// Mouse event constants
+const (
+	MOUSEEVENTF_RIGHTDOWN = 0x0008
+	MOUSEEVENTF_RIGHTUP   = 0x0010
+)
 
 type FyneApp struct {
 	app               fyne.App
@@ -322,14 +329,13 @@ func (a *FyneApp) triggerAction() {
 	// Play system beep
 	procMessageBeep.Call(0xFFFFFFFF)
 	
-	// Move mouse 300 pixels up
-	currentX, currentY := getCursorPos()
-	setCursorPos(currentX, currentY-300)
+	// Perform right mouse click
+	rightClick()
 	
 	// Stop monitoring and update GUI using fyne.Do
 	fyne.Do(func() {
 		a.stopMonitoring()
-		a.statusLabel.SetText("СРАБОТКА! Мышь перемещена, мониторинг остановлен")
+		a.statusLabel.SetText("СРАБОТКА! Выполнен правый клик, мониторинг остановлен")
 	})
 }
 
@@ -430,4 +436,21 @@ func getPixelColor(x, y int) color.RGBA {
 	b := uint8((colorRef >> 16) & 0xFF)
 	
 	return color.RGBA{R: r, G: g, B: b, A: 255}
+}
+
+func rightClick() {
+	// Simulate right mouse button down
+	procMouseEvent.Call(
+		uintptr(MOUSEEVENTF_RIGHTDOWN),
+		0, 0, 0, 0,
+	)
+	
+	// Small delay to ensure the down event is processed
+	time.Sleep(10 * time.Millisecond)
+	
+	// Simulate right mouse button up
+	procMouseEvent.Call(
+		uintptr(MOUSEEVENTF_RIGHTUP),
+		0, 0, 0, 0,
+	)
 }

@@ -10,6 +10,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 )
@@ -50,8 +51,10 @@ type FyneApp struct {
 	stopBtn           *widget.Button
 	selectPixelBtn    *widget.Button
 	setTargetBtn      *widget.Button
-	currentColorRect  *widget.Card
-	targetColorRect   *widget.Card
+	currentColorRect  *canvas.Rectangle
+	targetColorRect   *canvas.Rectangle
+	currentColorCard  *widget.Card
+	targetColorCard   *widget.Card
 	checkCountLabel   *widget.Label
 	avgChecksLabel    *widget.Label
 	statusLabel       *widget.Label
@@ -92,21 +95,34 @@ func (a *FyneApp) setupUI() {
 	a.setTargetBtn = widget.NewButton("Назначить цвет целевым", a.setTargetColor)
 	a.setTargetBtn.Disable()
 	
-	a.currentColorRect = widget.NewCard("Текущий цвет", "", widget.NewLabel("RGB(0,0,0)"))
-	a.targetColorRect = widget.NewCard("Целевой цвет", "", widget.NewLabel("RGB(0,0,0)"))
+	// Create color rectangles
+	a.currentColorRect = canvas.NewRectangle(color.RGBA{R: 128, G: 128, B: 128, A: 255})
+	currentContainer := container.NewWithoutLayout(a.currentColorRect)
+	currentContainer.Resize(fyne.NewSize(30, 30))
+	a.currentColorRect.Move(fyne.NewPos(10, 10))
+	a.currentColorRect.Resize(fyne.NewSize(10, 10))
+	a.currentColorCard = widget.NewCard("Текущий цвет", "", currentContainer)
+	
+	a.targetColorRect = canvas.NewRectangle(color.RGBA{R: 64, G: 64, B: 64, A: 255})
+	targetContainer := container.NewWithoutLayout(a.targetColorRect)
+	targetContainer.Resize(fyne.NewSize(30, 30))
+	a.targetColorRect.Move(fyne.NewPos(10, 10))
+	a.targetColorRect.Resize(fyne.NewSize(10, 10))
+	a.targetColorCard = widget.NewCard("Целевой цвет", "", targetContainer)
+	
 	a.coordsLabel = widget.NewLabel("Координаты: не выбраны")
 	
 	colorButtonsBox := container.NewVBox(a.selectPixelBtn, a.setTargetBtn, a.coordsLabel)
-	colorDisplayBox := container.NewHBox(a.currentColorRect, a.targetColorRect)
+	colorDisplayBox := container.NewCenter(container.NewHBox(a.currentColorCard, a.targetColorCard))
 	colorBox := container.NewVBox(colorButtonsBox, colorDisplayBox)
 	colorGroup := widget.NewCard("Цвета", "", colorBox)
 	
 	// Statistics block
-	a.checkCountLabel = widget.NewLabel("Количество проверок: 0")
-	a.avgChecksLabel = widget.NewLabel("Проверок в секунду: 0.0")
+	a.checkCountLabel = widget.NewLabel("Проверок: 0")
+	a.avgChecksLabel = widget.NewLabel("В секунду: 0.0")
 	
-	statsBox := container.NewVBox(a.checkCountLabel, a.avgChecksLabel)
-	statsGroup := widget.NewCard("Статистика", "", statsBox)
+	statsBox := container.NewHBox(a.checkCountLabel, a.avgChecksLabel)
+	statsGroup := container.NewCenter(statsBox)
 	
 	// Status
 	a.statusLabel = widget.NewLabel("Готов к работе")
@@ -215,16 +231,16 @@ func (a *FyneApp) updateCurrentColor() {
 }
 
 func (a *FyneApp) updateCurrentColorDisplay() {
-	colorText := fmt.Sprintf("RGB(%d,%d,%d)", a.currentColor.R, a.currentColor.G, a.currentColor.B)
 	fyne.Do(func() {
-		a.currentColorRect.SetContent(widget.NewLabel(colorText))
+		a.currentColorRect.FillColor = a.currentColor
+		a.currentColorRect.Refresh()
 	})
 }
 
 func (a *FyneApp) updateTargetColorDisplay() {
-	colorText := fmt.Sprintf("RGB(%d,%d,%d)", a.targetColor.R, a.targetColor.G, a.targetColor.B)
 	fyne.Do(func() {
-		a.targetColorRect.SetContent(widget.NewLabel(colorText))
+		a.targetColorRect.FillColor = a.targetColor
+		a.targetColorRect.Refresh()
 	})
 }
 
@@ -273,8 +289,8 @@ func (a *FyneApp) updateStatsLoop() {
 		
 		// Update GUI elements safely using fyne.Do
 		fyne.Do(func() {
-			a.checkCountLabel.SetText(fmt.Sprintf("Количество проверок: %d", count))
-			a.avgChecksLabel.SetText(fmt.Sprintf("Проверок в секунду: %.1f", avgChecks))
+			a.checkCountLabel.SetText(fmt.Sprintf("Проверок: %d", count))
+			a.avgChecksLabel.SetText(fmt.Sprintf("В секунду: %.1f", avgChecks))
 		})
 		
 		time.Sleep(100 * time.Millisecond)
@@ -314,12 +330,14 @@ func (a *FyneApp) triggerAction() {
 
 func (a *FyneApp) listenForHotkeys() {
 	for {
-		// Check for Ctrl+Shift+M (VK_CONTROL=0x11, VK_SHIFT=0x10, VK_M=0x4D)
-		ctrlPressed, _, _ := procGetAsyncKeyState.Call(0x11)
-		shiftPressed, _, _ := procGetAsyncKeyState.Call(0x10)
-		mPressed, _, _ := procGetAsyncKeyState.Call(0x4D)
+		// Check for Numpad 4 (VK_NUMPAD4=0x64)
+		numpad4Pressed, _, _ := procGetAsyncKeyState.Call(0x64)
 		
-		if (ctrlPressed&0x8000) != 0 && (shiftPressed&0x8000) != 0 && (mPressed&0x8000) != 0 {
+		// Check for Numpad 5 (VK_NUMPAD5=0x65)
+		numpad5Pressed, _, _ := procGetAsyncKeyState.Call(0x65)
+		
+		// Handle Numpad 4 - Toggle monitoring
+		if (numpad4Pressed&0x8000) != 0 {
 			a.mu.RLock()
 			isMonitoring := a.isMonitoring
 			a.mu.RUnlock()
@@ -337,8 +355,24 @@ func (a *FyneApp) listenForHotkeys() {
 			
 			// Wait for key release to avoid multiple triggers
 			for {
-				mPressed, _, _ := procGetAsyncKeyState.Call(0x4D)
-				if (mPressed & 0x8000) == 0 {
+				numpad4Pressed, _, _ := procGetAsyncKeyState.Call(0x64)
+				if (numpad4Pressed & 0x8000) == 0 {
+					break
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
+		}
+		
+		// Handle Numpad 5 - Select pixel
+		if (numpad5Pressed&0x8000) != 0 {
+			fyne.Do(func() {
+				a.selectPixelHotkey()
+			})
+			
+			// Wait for key release to avoid multiple triggers
+			for {
+				numpad5Pressed, _, _ := procGetAsyncKeyState.Call(0x65)
+				if (numpad5Pressed & 0x8000) == 0 {
 					break
 				}
 				time.Sleep(10 * time.Millisecond)
@@ -347,6 +381,25 @@ func (a *FyneApp) listenForHotkeys() {
 		
 		time.Sleep(50 * time.Millisecond)
 	}
+}
+
+func (a *FyneApp) selectPixelHotkey() {
+	// Get current cursor position immediately
+	x, y := getCursorPos()
+	a.selectedX = int(x)
+	a.selectedY = int(y)
+	
+	// Get current pixel color
+	a.updateCurrentColor()
+	
+	// Automatically set current color as target
+	a.targetColor = a.currentColor
+	a.updateTargetColorDisplay()
+	
+	// Update GUI elements
+	a.setTargetBtn.Enable()
+	a.coordsLabel.SetText(fmt.Sprintf("Координаты: (%d, %d)", x, y))
+	a.statusLabel.SetText(fmt.Sprintf("Выбран пиксель и установлен целевой цвет: (%d, %d)", x, y))
 }
 
 // Windows API functions

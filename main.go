@@ -24,6 +24,7 @@ var (
 	procSetCursorPos     = user32.NewProc("SetCursorPos")
 	procGetAsyncKeyState = user32.NewProc("GetAsyncKeyState")
 	procMessageBeep      = user32.NewProc("MessageBeep")
+	procGetKeyState      = user32.NewProc("GetKeyState")
 )
 
 type POINT struct {
@@ -66,6 +67,10 @@ func main() {
 	}
 	
 	myApp.setupUI()
+	
+	// Start global hotkey listener
+	go myApp.listenForHotkeys()
+	
 	myApp.window.ShowAndRun()
 }
 
@@ -291,6 +296,38 @@ func (a *FyneApp) triggerAction() {
 	// Stop monitoring
 	a.stopMonitoring()
 	a.statusLabel.SetText("СРАБОТКА! Мышь перемещена, мониторинг остановлен")
+}
+
+func (a *FyneApp) listenForHotkeys() {
+	for {
+		// Check for Ctrl+Shift+M (VK_CONTROL=0x11, VK_SHIFT=0x10, VK_M=0x4D)
+		ctrlPressed, _, _ := procGetAsyncKeyState.Call(0x11)
+		shiftPressed, _, _ := procGetAsyncKeyState.Call(0x10)
+		mPressed, _, _ := procGetAsyncKeyState.Call(0x4D)
+		
+		if (ctrlPressed&0x8000) != 0 && (shiftPressed&0x8000) != 0 && (mPressed&0x8000) != 0 {
+			a.mu.RLock()
+			isMonitoring := a.isMonitoring
+			a.mu.RUnlock()
+			
+			if isMonitoring {
+				a.stopMonitoring()
+			} else {
+				a.startMonitoring()
+			}
+			
+			// Wait for key release to avoid multiple triggers
+			for {
+				mPressed, _, _ := procGetAsyncKeyState.Call(0x4D)
+				if (mPressed & 0x8000) == 0 {
+					break
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
+		}
+		
+		time.Sleep(50 * time.Millisecond)
+	}
 }
 
 // Windows API functions

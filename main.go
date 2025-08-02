@@ -63,7 +63,12 @@ type FyneApp struct {
 
 func main() {
 	a := app.New()
-	a.SetIcon(nil)
+	
+	// Load application icon
+	iconResource, err := fyne.LoadResourceFromPath("assets/icon.png")
+	if err == nil {
+		a.SetIcon(iconResource)
+	}
 	
 	myApp := &FyneApp{
 		app:             a,
@@ -269,7 +274,7 @@ func (a *FyneApp) monitoringLoop() {
 			a.matchCount = 0
 		}
 		
-		time.Sleep(10 * time.Millisecond) // Check every 10ms
+		time.Sleep(5 * time.Millisecond) // Check every 5ms
 	}
 }
 

@@ -5,6 +5,7 @@
 # Go build artifacts
 /target/
 /bin/
+/dist/
 
 # IDE files
 .vscode/

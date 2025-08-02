@@ -1,4 +1,4 @@
-# Poe Go Non-Click Application
+# Miss-Click Protector
 
 ## Описание проекта
 Приложение на языке Go для защиты от лишних кликов при крафте в игре Path Of Exile

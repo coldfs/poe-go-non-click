@@ -23,14 +23,14 @@ export CGO_ENABLED=1
 ```bash
 export PATH="/c/work/tdm-gcc/bin:/c/Program Files/Go/bin:$PATH"
 export CGO_ENABLED=1
-go build -v -o poe-go-non-click-fyne.exe main.go
+go build -v -o dist/miss-click-protector.exe main.go
 ```
 
 ### Production Build (without console)
 ```bash
 export PATH="/c/work/tdm-gcc/bin:/c/Program Files/Go/bin:$PATH"
 export CGO_ENABLED=1
-go build -v -ldflags="-H windowsgui" -o poe-go-non-click-fyne.exe main.go
+go build -v -ldflags="-H windowsgui" -o dist/miss-click-protector.exe main.go
 ```
 
 ### Dependencies

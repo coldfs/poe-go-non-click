@@ -1,4 +1,4 @@
-# PoE Go Non-Click Protection
+# Miss-Click Protector
 
 Приложение на языке Go для защиты от случайных кликов при крафте в игре Path of Exile.
 
@@ -61,20 +61,20 @@ cd poe-go-non-click
 ```bash
 export PATH="/c/work/tdm-gcc/bin:$PATH"
 export CGO_ENABLED=1
-go build -v -o poe-go-non-click-fyne.exe main.go
+go build -v -o dist/miss-click-protector.exe main.go
 ```
 
 #### Для продакшена (без консоли):
 ```bash
 export PATH="/c/work/tdm-gcc/bin:$PATH"
 export CGO_ENABLED=1
-go build -v -ldflags="-H windowsgui" -o poe-go-non-click-fyne.exe main.go
+go build -v -ldflags="-H windowsgui" -o dist/miss-click-protector.exe main.go
 ```
 
 ### 4. Запуск
 
 ```bash
-./poe-go-non-click-fyne.exe
+./dist/miss-click-protector.exe
 ```
 
 ## Инструкция по использованию

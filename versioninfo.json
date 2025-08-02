@@ -1,0 +1,35 @@
+{
+	"FileVersion": {
+		"Major": 1,
+		"Minor": 0,
+		"Patch": 0,
+		"Build": 0
+	},
+	"ProductVersion": {
+		"Major": 1,
+		"Minor": 0,
+		"Patch": 0,
+		"Build": 0
+	},
+	"StringFileInfo": {
+		"Comments": "Miss-Click Protector",
+		"CompanyName": "",
+		"FileDescription": "Path of Exile crafting protection tool",
+		"FileVersion": "1.0.0.0",
+		"InternalName": "miss-click-protector",
+		"LegalCopyright": "",
+		"LegalTrademarks": "",
+		"OriginalFilename": "miss-click-protector.exe",
+		"PrivateBuild": "",
+		"ProductName": "Miss-Click Protector",
+		"ProductVersion": "1.0.0.0",
+		"SpecialBuild": ""
+	},
+	"VarFileInfo": {
+		"Translation": {
+			"LangID": 1033,
+			"CharsetID": 1200
+		}
+	},
+	"IconPath": "assets/icon.ico"
+}
